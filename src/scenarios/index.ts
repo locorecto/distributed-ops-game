@@ -18,12 +18,24 @@ import scenario17 from './17-database-cdc'
 import scenario18 from './18-fraud-detection'
 import scenario19 from './19-schema-registry'
 import scenario20 from './20-multi-dc-dr'
+import scenario21 from './21-log-compaction-deep-dive'
+import scenario22 from './22-consumer-rebalance-storm'
+import scenario23 from './23-quota-throttling'
+import scenario24 from './24-kafka-connect-jdbc-sink'
+import scenario25 from './25-debezium-cdc-source'
+import scenario26 from './26-schema-forward-compat'
+import scenario27 from './27-partition-leader-imbalance'
+import scenario28 from './28-active-active-geo-replication'
+import scenario29 from './29-acl-sasl-security'
+import scenario30 from './30-multi-tenant-cluster'
 
 export const SCENARIOS = [
   scenario01, scenario02, scenario03, scenario04, scenario05,
   scenario06, scenario07, scenario08, scenario09, scenario10,
   scenario11, scenario12, scenario13, scenario14, scenario15,
   scenario16, scenario17, scenario18, scenario19, scenario20,
+  scenario21, scenario22, scenario23, scenario24, scenario25,
+  scenario26, scenario27, scenario28, scenario29, scenario30,
 ]
 
 export const DIFFICULTY_COLORS: Record<string, string> = {

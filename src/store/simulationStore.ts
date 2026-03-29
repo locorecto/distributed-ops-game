@@ -1,11 +1,12 @@
 import { create } from 'zustand'
-import type { SimulationSnapshot } from '../engine/types'
 
 interface SimulationStoreState {
-  snapshot: SimulationSnapshot | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  snapshot: any
   isRunning: boolean
   speed: 1 | 2 | 4
-  setSnapshot(s: SimulationSnapshot): void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setSnapshot(s: any): void
   setRunning(r: boolean): void
   setSpeed(s: 1 | 2 | 4): void
   clear(): void

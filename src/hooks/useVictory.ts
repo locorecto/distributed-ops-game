@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useSimulationStore } from '../store/simulationStore'
 import { useGameStore, computeScore } from '../store/gameStore'
-import { SCENARIOS } from '../scenarios/index'
+import { getScenariosForTech } from '../technologies/registry'
 import { GAME } from '../constants/game'
 
 export function useVictory(): void {
   const snapshot = useSimulationStore((s) => s.snapshot)
-  const { phase, currentScenarioIndex, hintsUsedThisRun, recordVictory } = useGameStore()
+  const { phase, currentScenarioIndex, activeTechnology, hintsUsedThisRun, recordVictory } = useGameStore()
   const consecutiveRef = useRef(0)
   const startTickRef = useRef<number | null>(null)
 
@@ -22,7 +22,7 @@ export function useVictory(): void {
       return
     }
 
-    const scenario = SCENARIOS[currentScenarioIndex]
+    const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
     if (!scenario) return
 
     if (startTickRef.current === null) {
@@ -32,15 +32,15 @@ export function useVictory(): void {
     // Don't check victory until after the first failure injection has had time to fire,
     // so we don't win on the trivially-healthy initial state before any problem appears.
     const firstFailureTick = scenario.failureScript.length > 0
-      ? Math.min(...scenario.failureScript.map(f => f.atTick))
+      ? Math.min(...scenario.failureScript.map((f: any) => f.atTick))
       : 0
     const gracePeriod = firstFailureTick + 20  // 2 extra seconds buffer
 
     if (snapshot.tickNumber < gracePeriod) return
 
     const allRequired = scenario.victoryConditions
-      .filter((vc) => vc.required)
-      .every((vc) => vc.check(snapshot))
+      .filter((vc: any) => vc.required)
+      .every((vc: any) => vc.check(snapshot))
 
     if (allRequired) {
       consecutiveRef.current++
@@ -60,5 +60,5 @@ export function useVictory(): void {
       recordVictory(score, stars, conceptsLearned)
       consecutiveRef.current = 0
     }
-  }, [snapshot, phase, currentScenarioIndex, hintsUsedThisRun, recordVictory])
+  }, [snapshot, phase, currentScenarioIndex, activeTechnology, hintsUsedThisRun, recordVictory])
 }

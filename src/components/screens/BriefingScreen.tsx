@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
-import { SCENARIOS, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from '../../scenarios/index'
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import { Button } from '../shared/Button'
 
 interface BriefingScreenProps {
@@ -8,8 +9,8 @@ interface BriefingScreenProps {
 }
 
 export function BriefingScreen({ onStart }: BriefingScreenProps) {
-  const { currentScenarioIndex, returnToMenu } = useGameStore()
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const { currentScenarioIndex, activeTechnology, returnToMenu } = useGameStore()
+  const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
   if (!scenario) return null
 
   const diffColor = DIFFICULTY_COLORS[scenario.difficulty]
@@ -51,7 +52,7 @@ export function BriefingScreen({ onStart }: BriefingScreenProps) {
         <div className="mb-4">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Concepts Covered</div>
           <div className="flex flex-wrap gap-1">
-            {scenario.coverConcepts.map(c => (
+            {scenario.coverConcepts.map((c: string) => (
               <span key={c} className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">
                 {c.replace(/-/g, ' ')}
               </span>

@@ -1,19 +1,20 @@
 import { useGameStore } from '../../store/gameStore'
 import { useSimulationStore } from '../../store/simulationStore'
-import { SCENARIOS, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from '../../scenarios/index'
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import { COLORS } from '../../constants/colors'
 import { formatSimTime } from '../../utils/formatters'
 import { GAME } from '../../constants/game'
 import type { SimulationEngine } from '../../engine/SimulationEngine'
 
 interface TopBarProps {
-  engine: SimulationEngine
+  engine: SimulationEngine | null
 }
 
 export function TopBar({ engine }: TopBarProps) {
-  const { currentScenarioIndex, phase, pauseGame, resumeGame, returnToMenu, simulationSpeed, setSimulationSpeed } = useGameStore()
+  const { currentScenarioIndex, activeTechnology, phase, pauseGame, resumeGame, returnToMenu, simulationSpeed, setSimulationSpeed } = useGameStore()
   const snapshot = useSimulationStore(s => s.snapshot)
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
 
   const health = snapshot?.systemHealthScore ?? 100
   const healthColor = health > 70 ? COLORS.health.green : health > 40 ? COLORS.health.yellow : health > 20 ? COLORS.health.orange : COLORS.health.red
@@ -56,7 +57,7 @@ export function TopBar({ engine }: TopBarProps) {
           {([1, 2, 4] as const).map(s => (
             <button
               key={s}
-              onClick={() => { setSimulationSpeed(s); engine.setSpeed(s) }}
+              onClick={() => { setSimulationSpeed(s); engine?.setSpeed(s) }}
               className={`text-xs px-2 py-1 rounded ${simulationSpeed === s ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
             >
               {s}×
@@ -66,7 +67,7 @@ export function TopBar({ engine }: TopBarProps) {
 
         {/* Pause/resume */}
         <button
-          onClick={() => { phase === 'playing' ? (pauseGame(), engine.stop()) : (resumeGame(), engine.start()) }}
+          onClick={() => { phase === 'playing' ? (pauseGame(), engine?.stop()) : (resumeGame(), engine?.start()) }}
           className="text-xs px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
         >
           {phase === 'playing' ? '⏸ Pause' : '▶ Resume'}

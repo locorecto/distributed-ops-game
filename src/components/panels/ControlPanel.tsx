@@ -1,7 +1,7 @@
 import { useGameStore } from '../../store/gameStore'
 import { useSimulationStore } from '../../store/simulationStore'
 import { useUIStore } from '../../store/uiStore'
-import { SCENARIOS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import type { SimulationEngine } from '../../engine/SimulationEngine'
 import { TopicConfigPanel } from './TopicConfigPanel'
 import { ProducerConfigPanel } from './ProducerConfigPanel'
@@ -20,18 +20,18 @@ const TAB_LABELS: Record<string, string> = {
 }
 
 export function ControlPanel({ engine }: ControlPanelProps) {
-  const { currentScenarioIndex } = useGameStore()
+  const { currentScenarioIndex, activeTechnology } = useGameStore()
   const snapshot = useSimulationStore(s => s.snapshot)
   const { activeControlTab, setActiveControlTab } = useUIStore()
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
 
   const tabs = ['topic', 'producer', 'consumer', 'broker'].filter(tab => {
     if (!scenario) return true
     const actions = scenario.availableActions
-    if (tab === 'topic') return actions.some(a => ['add-partitions','change-replication','set-retention-ms','set-retention-bytes','set-cleanup-policy','set-min-isr','set-message-size'].includes(a))
-    if (tab === 'producer') return actions.some(a => ['set-producer-acks','enable-idempotence','enable-transactions','set-producer-key','set-linger-ms','set-batch-size','set-compression','set-fetch-config','set-schema'].includes(a))
-    if (tab === 'consumer') return actions.some(a => ['add-consumer','remove-consumer','set-max-poll-records','set-offset-reset','enable-manual-commit','set-isolation-level','set-session-timeout','set-poll-interval','set-heartbeat','add-dlq','configure-retry','reset-consumer-group-offset','set-schema'].includes(a))
-    if (tab === 'broker') return actions.some(a => ['toggle-broker'].includes(a))
+    if (tab === 'topic') return actions.some((a: string) => ['add-partitions','change-replication','set-retention-ms','set-retention-bytes','set-cleanup-policy','set-min-isr','set-message-size'].includes(a))
+    if (tab === 'producer') return actions.some((a: string) => ['set-producer-acks','enable-idempotence','enable-transactions','set-producer-key','set-linger-ms','set-batch-size','set-compression','set-fetch-config','set-schema'].includes(a))
+    if (tab === 'consumer') return actions.some((a: string) => ['add-consumer','remove-consumer','set-max-poll-records','set-offset-reset','enable-manual-commit','set-isolation-level','set-session-timeout','set-poll-interval','set-heartbeat','add-dlq','configure-retry','reset-consumer-group-offset','set-schema'].includes(a))
+    if (tab === 'broker') return actions.some((a: string) => ['toggle-broker'].includes(a))
     return true
   })
 

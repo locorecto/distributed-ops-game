@@ -13,9 +13,15 @@ import { SimulationCanvas } from '../canvas/SimulationCanvas'
 import { ControlPanel } from '../panels/ControlPanel'
 import { MetricsPanel } from '../metrics/MetricsPanel'
 import { HintPanel } from '../tutorial/HintPanel'
+import { GenericGameScreen } from './GenericGameScreen'
 
 export function GameScreen() {
-  const { currentScenarioIndex, phase } = useGameStore()
+  const { currentScenarioIndex, activeTechnology, phase } = useGameStore()
+
+  // Non-Kafka technologies use the generic game screen
+  if (activeTechnology !== 'kafka') {
+    return <GenericGameScreen />
+  }
   const clearSnapshot = useSimulationStore(s => s.clear)
   const clearMetrics = useMetricsStore(s => s.clearHistory)
   const clearSelection = useUIStore(s => s.clearSelection)

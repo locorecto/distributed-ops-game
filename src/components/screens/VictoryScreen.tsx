@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
 import { useSimulationStore } from '../../store/simulationStore'
-import { SCENARIOS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import { Button } from '../shared/Button'
 
 export function VictoryScreen() {
-  const { currentScenarioIndex, scenarioProgress, returnToMenu, startScenario, unlockedScenarios } = useGameStore()
+  const { currentScenarioIndex, activeTechnology, scenarioProgress, returnToMenu, startScenario, unlockedScenarios } = useGameStore()
   const snapshot = useSimulationStore(s => s.snapshot)
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const scenarios = getScenariosForTech(activeTechnology)
+  const scenario = scenarios[currentScenarioIndex]
   const progress = scenarioProgress[currentScenarioIndex]
 
   if (!scenario || !progress) return null
@@ -15,7 +16,7 @@ export function VictoryScreen() {
   const score = progress.bestScore ?? 0
   const stars = progress.stars
   const nextIndex = currentScenarioIndex + 1
-  const hasNext = nextIndex < SCENARIOS.length && unlockedScenarios.includes(nextIndex)
+  const hasNext = nextIndex < scenarios.length && unlockedScenarios.includes(nextIndex)
 
   return (
     <div className="flex items-center justify-center h-full p-8" style={{ backgroundColor: '#0f172a' }}>
@@ -99,7 +100,7 @@ export function VictoryScreen() {
         >
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Concepts Learned</div>
           <div className="flex flex-wrap gap-1">
-            {scenario.coverConcepts.map(c => (
+            {scenario.coverConcepts.map((c: string) => (
               <span key={c} className="text-xs px-2 py-0.5 rounded bg-green-900/40 text-green-400 border border-green-800/50">
                 {c.replace(/-/g, ' ')}
               </span>

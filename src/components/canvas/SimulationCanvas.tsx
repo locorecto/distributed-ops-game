@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { useSimulationStore } from '../../store/simulationStore'
+import type { SimulationSnapshot } from '../../engine/types'
 import { useUIStore } from '../../store/uiStore'
 import { ProducerNode } from './ProducerNode'
 import { ConsumerNode } from './ConsumerNode'
@@ -52,7 +53,7 @@ function computeLayout(
 }
 
 export function SimulationCanvas() {
-  const snapshot = useSimulationStore(s => s.snapshot)
+  const snapshot = useSimulationStore(s => s.snapshot) as SimulationSnapshot | null
   const { selectedEntityId, selectEntity, clearSelection } = useUIStore()
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 800, height: 400 })

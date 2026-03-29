@@ -2,18 +2,18 @@ import { useEffect, useRef } from 'react'
 import { useSimulationStore } from '../store/simulationStore'
 import { useGameStore } from '../store/gameStore'
 import { useUIStore } from '../store/uiStore'
-import { SCENARIOS } from '../scenarios/index'
+import { getScenariosForTech } from '../technologies/registry'
 
 export function useHints(): void {
   const snapshot = useSimulationStore((s) => s.snapshot)
-  const { phase, currentScenarioIndex } = useGameStore()
+  const { phase, currentScenarioIndex, activeTechnology } = useGameStore()
   const { setHintPanelOpen } = useUIStore()
   const revealedRef = useRef(new Set<number>())
 
   useEffect(() => {
     if (phase !== 'playing' || !snapshot) return
 
-    const scenario = SCENARIOS[currentScenarioIndex]
+    const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
     if (!scenario) return
 
     for (const hint of scenario.briefing.hints) {
@@ -27,7 +27,7 @@ export function useHints(): void {
         setHintPanelOpen(true)
       }
     }
-  }, [snapshot, phase, currentScenarioIndex, setHintPanelOpen])
+  }, [snapshot, phase, currentScenarioIndex, activeTechnology, setHintPanelOpen])
 
   // reset on scenario change
   useEffect(() => {

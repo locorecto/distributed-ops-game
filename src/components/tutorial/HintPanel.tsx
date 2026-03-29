@@ -3,29 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSimulationStore } from '../../store/simulationStore'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
-import { SCENARIOS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import { Button } from '../shared/Button'
 
 export function HintPanel() {
-  const { currentScenarioIndex, useHint } = useGameStore()
+  const { currentScenarioIndex, activeTechnology, useHint } = useGameStore()
   const { isHintPanelOpen, setHintPanelOpen } = useUIStore()
   const snapshot = useSimulationStore(s => s.snapshot)
   const [revealedHints, setRevealedHints] = useState<Set<number>>(new Set())
 
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
   if (!scenario) return null
 
   const hints = scenario.briefing.hints
   const currentHealth = snapshot?.systemHealthScore ?? 100
 
-  const triggerableHints = hints.filter(h => {
+  const triggerableHints = hints.filter((h: any) => {
     if (revealedHints.has(h.order)) return true
     const healthOk = h.triggerOnHealthBelow == null || currentHealth < h.triggerOnHealthBelow
     const tickOk = h.triggerAfterTick == null || (snapshot?.tickNumber ?? 0) >= h.triggerAfterTick
     return healthOk && tickOk
   })
 
-  const unrevealedTriggerableCount = triggerableHints.filter(h => !revealedHints.has(h.order)).length
+  const unrevealedTriggerableCount = triggerableHints.filter((h: any) => !revealedHints.has(h.order)).length
 
   return (
     <>
@@ -73,8 +73,8 @@ export function HintPanel() {
             {/* Hints */}
             <div className="p-3 flex flex-col gap-3">
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hints</div>
-              {hints.map(hint => {
-                const isTriggerable = triggerableHints.some(h => h.order === hint.order)
+              {hints.map((hint: any) => {
+                const isTriggerable = triggerableHints.some((h: any) => h.order === hint.order)
                 const isRevealed = revealedHints.has(hint.order)
                 const healthThreshold = hint.triggerOnHealthBelow
                 // Progress toward unlocking: 0 = just started, 1 = threshold reached

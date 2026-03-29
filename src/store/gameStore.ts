@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { TechKey } from '../technologies/types'
 
 export type GamePhase =
+  | 'lobby'
   | 'menu'
   | 'briefing'
   | 'playing'
@@ -19,17 +21,32 @@ export interface ScenarioProgress {
   stars: 0 | 1 | 2 | 3
 }
 
-interface GameState {
-  phase: GamePhase
-  currentScenarioIndex: number
+export interface TechProgressState {
   unlockedScenarios: number[]
   scenarioProgress: Record<number, ScenarioProgress>
   totalScore: number
+}
+
+function defaultTechProgress(): TechProgressState {
+  return { unlockedScenarios: [0], scenarioProgress: {}, totalScore: 0 }
+}
+
+interface GameState {
+  phase: GamePhase
+  activeTechnology: TechKey
+  currentScenarioIndex: number
+  techProgress: Record<TechKey, TechProgressState>
   hintsUsedThisRun: number
   simulationSpeed: 1 | 2 | 4
   soundEnabled: boolean
 
+  // derived helpers (read-only shortcuts for active tech)
+  unlockedScenarios: number[]
+  scenarioProgress: Record<number, ScenarioProgress>
+  totalScore: number
+
   setPhase(phase: GamePhase): void
+  setActiveTechnology(tech: TechKey): void
   startScenario(index: number): void
   pauseGame(): void
   resumeGame(): void
@@ -37,23 +54,58 @@ interface GameState {
   recordVictory(score: number, stars: 0 | 1 | 2 | 3, conceptsLearned: string[]): void
   recordFailure(): void
   returnToMenu(): void
+  returnToLobby(): void
   setSimulationSpeed(speed: 1 | 2 | 4): void
   toggleSound(): void
+}
+
+function buildDerivedState(
+  techProgress: Record<TechKey, TechProgressState>,
+  activeTechnology: TechKey,
+) {
+  const tp = techProgress[activeTechnology] ?? defaultTechProgress()
+  return {
+    unlockedScenarios: tp.unlockedScenarios,
+    scenarioProgress: tp.scenarioProgress,
+    totalScore: tp.totalScore,
+  }
+}
+
+function allTechProgress(): Record<TechKey, TechProgressState> {
+  return {
+    kafka: defaultTechProgress(),
+    redis: defaultTechProgress(),
+    elasticsearch: defaultTechProgress(),
+    flink: defaultTechProgress(),
+    rabbitmq: defaultTechProgress(),
+  }
 }
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      phase: 'menu',
+      phase: 'lobby',
+      activeTechnology: 'kafka',
       currentScenarioIndex: 0,
-      unlockedScenarios: [0],
-      scenarioProgress: {},
-      totalScore: 0,
+      techProgress: allTechProgress(),
       hintsUsedThisRun: 0,
       simulationSpeed: 1,
       soundEnabled: true,
+      // derived
+      unlockedScenarios: [0],
+      scenarioProgress: {},
+      totalScore: 0,
 
       setPhase: (phase) => set({ phase }),
+
+      setActiveTechnology: (tech) => {
+        const { techProgress } = get()
+        set({
+          activeTechnology: tech,
+          phase: 'menu',
+          ...buildDerivedState(techProgress, tech),
+        })
+      },
 
       startScenario: (index) => {
         set({ phase: 'briefing', currentScenarioIndex: index, hintsUsedThisRun: 0 })
@@ -65,14 +117,15 @@ export const useGameStore = create<GameState>()(
       useHint: () => set(s => ({ hintsUsedThisRun: s.hintsUsedThisRun + 1 })),
 
       recordVictory: (score, stars, conceptsLearned) => {
-        const { currentScenarioIndex, scenarioProgress, totalScore, hintsUsedThisRun } = get()
-        const prev = scenarioProgress[currentScenarioIndex]
+        const { currentScenarioIndex, techProgress, activeTechnology, hintsUsedThisRun } = get()
+        const tp = techProgress[activeTechnology] ?? defaultTechProgress()
+        const prev = tp.scenarioProgress[currentScenarioIndex]
         const isBetter = !prev || score > (prev.bestScore ?? 0)
-        set({
-          phase: 'victory',
-          totalScore: totalScore + score,
+        const newTp: TechProgressState = {
+          ...tp,
+          totalScore: tp.totalScore + score,
           scenarioProgress: {
-            ...scenarioProgress,
+            ...tp.scenarioProgress,
             [currentScenarioIndex]: {
               bestScore: isBetter ? score : prev.bestScore,
               completedAt: new Date().toISOString(),
@@ -82,41 +135,58 @@ export const useGameStore = create<GameState>()(
               stars: isBetter ? stars : (prev?.stars ?? 0),
             },
           },
-          unlockedScenarios: Array.from(
-            new Set([...get().unlockedScenarios, currentScenarioIndex + 1])
-          ),
+          unlockedScenarios: Array.from(new Set([...tp.unlockedScenarios, currentScenarioIndex + 1])),
+        }
+        const newTechProgress = { ...techProgress, [activeTechnology]: newTp }
+        set({
+          phase: 'victory',
+          techProgress: newTechProgress,
+          ...buildDerivedState(newTechProgress, activeTechnology),
         })
       },
 
       recordFailure: () => {
-        const { currentScenarioIndex, scenarioProgress } = get()
-        const prev = scenarioProgress[currentScenarioIndex]
-        set({
-          phase: 'failed',
+        const { currentScenarioIndex, techProgress, activeTechnology } = get()
+        const tp = techProgress[activeTechnology] ?? defaultTechProgress()
+        const prev = tp.scenarioProgress[currentScenarioIndex]
+        const newTp: TechProgressState = {
+          ...tp,
           scenarioProgress: {
-            ...scenarioProgress,
+            ...tp.scenarioProgress,
             [currentScenarioIndex]: {
               ...(prev ?? { bestScore: null, completedAt: null, hintsUsed: 0, conceptsLearned: [], stars: 0 }),
               attemptCount: (prev?.attemptCount ?? 0) + 1,
             },
           },
-        })
+        }
+        set({ phase: 'failed', techProgress: { ...techProgress, [activeTechnology]: newTp } })
       },
 
-      returnToMenu: () => set({ phase: 'menu' }),
+      returnToMenu: () => {
+        const { techProgress, activeTechnology } = get()
+        set({ phase: 'menu', ...buildDerivedState(techProgress, activeTechnology) })
+      },
+
+      returnToLobby: () => set({ phase: 'lobby' }),
 
       setSimulationSpeed: (speed) => set({ simulationSpeed: speed }),
 
       toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
     }),
     {
-      name: 'kafka-ops-game',
+      name: 'distributed-ops-game',
       partialize: (state) => ({
-        unlockedScenarios: state.unlockedScenarios,
-        scenarioProgress: state.scenarioProgress,
-        totalScore: state.totalScore,
+        activeTechnology: state.activeTechnology,
+        techProgress: state.techProgress,
         soundEnabled: state.soundEnabled,
       }),
+      onRehydrateStorage: () => (state) => {
+        // rebuild derived state after rehydration
+        if (state) {
+          const derived = buildDerivedState(state.techProgress, state.activeTechnology)
+          Object.assign(state, derived)
+        }
+      },
     },
   ),
 )

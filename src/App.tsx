@@ -1,4 +1,5 @@
 import { useGameStore } from './store/gameStore'
+import { TechnologyLobby } from './components/screens/TechnologyLobby'
 import { MainMenu } from './components/screens/MainMenu'
 import { BriefingScreen } from './components/screens/BriefingScreen'
 import { GameScreen } from './components/screens/GameScreen'
@@ -15,6 +16,7 @@ export default function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#0f172a' }}>
+      {phase === 'lobby' && <TechnologyLobby />}
       {phase === 'menu' && <MainMenu />}
       {phase === 'briefing' && <BriefingScreen onStart={handleStartGame} />}
       {(phase === 'playing' || phase === 'paused') && <GameScreen />}

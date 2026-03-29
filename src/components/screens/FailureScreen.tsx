@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../store/gameStore'
-import { SCENARIOS } from '../../scenarios/index'
+import { getScenariosForTech } from '../../technologies/registry'
 import { Button } from '../shared/Button'
 
 export function FailureScreen() {
-  const { currentScenarioIndex, scenarioProgress, returnToMenu, startScenario } = useGameStore()
-  const scenario = SCENARIOS[currentScenarioIndex]
+  const { currentScenarioIndex, activeTechnology, scenarioProgress, returnToMenu, startScenario } = useGameStore()
+  const scenario = getScenariosForTech(activeTechnology)[currentScenarioIndex]
   const progress = scenarioProgress[currentScenarioIndex]
 
   if (!scenario) return null
