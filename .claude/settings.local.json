@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(./node_modules/.bin/tailwindcss init:*)",
+      "Bash(npm run:*)",
+      "Bash(npm list:*)",
+      "Bash(node -e \"require\\(''@tailwindcss/postcss''\\)\")",
+      "Bash(pkill -f \"vite.*5173\")",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls -la /d/code/kafka-ops-game/src/scenarios/2*.ts)",
+      "Bash(wc -l /d/code/kafka-ops-game/src/scenarios/2*.ts)",
+      "Bash(sed -i \"s/queryType: ''percolate''/queryType: ''match''/\" d:/code/kafka-ops-game/src/technologies/elasticsearch/scenarios/27-percolator.ts)",
+      "Bash(sed -i \"s/queryType: ''geo-shape''/queryType: ''match''/\" d:/code/kafka-ops-game/src/technologies/elasticsearch/scenarios/28-geo-shape.ts)",
+      "Bash(sed -i \"s/queryType: ''cross-cluster''/queryType: ''match''/\" d:/code/kafka-ops-game/src/technologies/elasticsearch/scenarios/30-cross-cluster-search.ts)",
+      "Bash(/tmp/flickering.md:*)",
+      "Read(//tmp/**)",
+      "Bash(grep -h \"failureScript\" d:/code/kafka-ops-game/src/technologies/redis/scenarios/*.ts)",
+      "Bash(grep -A1 \"{ atTick\" d:/code/kafka-ops-game/src/technologies/redis/scenarios/*.ts)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/code/kafka-ops-game/src/technologies/redis/scenarios/**)",
+      "Bash(done)"
+    ]
+  }
+}

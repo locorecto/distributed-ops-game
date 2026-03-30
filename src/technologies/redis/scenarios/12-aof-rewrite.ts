@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'memory-pressure', target: 'redis-master', params: { reason: 'aof-fsync-bottleneck' } },
+    { atTick: 5, type: 'aof-pressure', target: 'redis-master', params: { reason: 'aof-fsync-bottleneck', latencyMs: 5 } },
   ],
   victoryConditions: [
     {

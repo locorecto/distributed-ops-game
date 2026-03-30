@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'hot-key', target: 'redis-master', params: { race: 'incr-expire' } },
+    { atTick: 5, type: 'race-condition', target: 'redis-master', params: { race: 'incr-expire' } },
   ],
   victoryConditions: [
     {

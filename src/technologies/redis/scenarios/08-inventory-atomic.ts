@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 10, type: 'hot-key', target: 'redis-master', params: { reason: 'flash-sale' } },
+    { atTick: 10, type: 'race-condition', target: 'redis-master', params: { reason: 'flash-sale' } },
   ],
   victoryConditions: [
     {

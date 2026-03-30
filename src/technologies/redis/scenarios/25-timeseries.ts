@@ -79,9 +79,9 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 10, type: 'memory-pressure', target: 'redis-ts-node-1', params: { reason: 'no-retention', keysPerDay: 43200000000 } },
-    { atTick: 10, type: 'memory-pressure', target: 'redis-ts-node-2', params: { reason: 'no-retention' } },
-    { atTick: 10, type: 'memory-pressure', target: 'redis-ts-node-3', params: { reason: 'no-retention' } },
+    { atTick: 10, type: 'eviction-storm', target: 'redis-ts-node-1', params: { reason: 'no-retention', keysPerDay: 43200000000 } },
+    { atTick: 10, type: 'eviction-storm', target: 'redis-ts-node-2', params: { reason: 'no-retention' } },
+    { atTick: 10, type: 'eviction-storm', target: 'redis-ts-node-3', params: { reason: 'no-retention' } },
   ],
   victoryConditions: [
     {

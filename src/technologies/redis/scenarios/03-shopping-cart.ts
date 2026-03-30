@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'memory-pressure', target: 'redis-master', params: { dataStructure: 'string-blob' } },
+    { atTick: 5, type: 'slow-query', target: 'redis-master', params: { dataStructure: 'string-blob', latencyMs: 3000 } },
   ],
   victoryConditions: [
     {

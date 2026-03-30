@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 30, type: 'memory-pressure', target: 'redis-master', params: { reason: 'bgsave-fork', durationTicks: 40 } },
+    { atTick: 30, type: 'aof-pressure', target: 'redis-master', params: { reason: 'bgsave-fork', durationTicks: 40, latencyMs: 1200 } },
   ],
   victoryConditions: [
     {

@@ -241,21 +241,92 @@ export class RabbitMQEngine {
     this.tickConsumed.clear()
   }
 
-  applyAction(_actionId: string): void {
-    this.activeFailures = []
-    for (const node of this.nodes.values()) {
-      node.isOnline = true
-      node.isMemoryAlarm = false
-      node.isDiskAlarm = false
-      node.memoryUsedMb = node.maxMemoryMb * 0.3
-      node.diskFreeMb = node.minDiskFreeMb * 10
-    }
-    for (const queue of this.queues.values()) {
-      queue.depth = Math.min(queue.depth, 50)
-      queue.dlqDepth = 0
-    }
-    for (const pub of this.publishers.values()) {
-      pub.blocked = false
+  applyAction(actionId: string): void {
+    switch (actionId) {
+      case 'add-consumer': {
+        // Increase consumer processing: reduce queue depth by allowing faster drain
+        for (const consumer of this.consumers.values()) {
+          consumer.isActive = true
+          consumer.config = { ...consumer.config, prefetchCount: Math.max(10, consumer.config.prefetchCount) }
+        }
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('consumer-crash:'))
+        break
+      }
+      case 'set-prefetch': {
+        // Fix consumer throughput by setting prefetch
+        for (const consumer of this.consumers.values()) {
+          consumer.config = { ...consumer.config, prefetchCount: 100 }
+        }
+        break
+      }
+      case 'configure-dlx': {
+        // DLX is a config change; just clear unroutable failures
+        this.activeFailures = this.activeFailures.filter(f => f !== 'unroutable-messages')
+        break
+      }
+      case 'enable-publisher-confirms': {
+        // Clear unacked messages backlog by resolving confirms
+        for (const pub of this.publishers.values()) {
+          pub.totalUnconfirmed = 0
+        }
+        break
+      }
+      case 'set-queue-ttl': {
+        // Clear memory alarm by reducing queue depth via TTL expiry simulation
+        for (const queue of this.queues.values()) {
+          queue.depth = Math.min(queue.depth, 100)
+        }
+        for (const node of this.nodes.values()) {
+          node.isMemoryAlarm = false
+          node.memoryUsedMb = Math.min(node.memoryUsedMb, node.maxMemoryMb * 0.3)
+        }
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('memory-alarm:'))
+        break
+      }
+      case 'increase-memory-limit': {
+        // Clear memory alarm by raising the effective limit
+        for (const node of this.nodes.values()) {
+          node.isMemoryAlarm = false
+          node.memoryUsedMb = Math.min(node.memoryUsedMb, node.maxMemoryMb * 0.3)
+        }
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('memory-alarm:'))
+        for (const pub of this.publishers.values()) {
+          pub.blocked = false
+        }
+        break
+      }
+      case 'create-quorum-queue': {
+        // Fix split brain — bring all nodes back online
+        for (const node of this.nodes.values()) {
+          if (!node.isOnline) node.isOnline = true
+        }
+        this.activeFailures = this.activeFailures.filter(
+          f => !f.startsWith('network-partition:') && !f.startsWith('node-down:')
+        )
+        for (const consumer of this.consumers.values()) {
+          consumer.isActive = true
+        }
+        break
+      }
+      default: {
+        // Fallback: full reset
+        this.activeFailures = []
+        for (const node of this.nodes.values()) {
+          node.isOnline = true
+          node.isMemoryAlarm = false
+          node.isDiskAlarm = false
+          node.memoryUsedMb = node.maxMemoryMb * 0.3
+          node.diskFreeMb = node.minDiskFreeMb * 10
+        }
+        for (const queue of this.queues.values()) {
+          queue.depth = Math.min(queue.depth, 50)
+          queue.dlqDepth = 0
+        }
+        for (const pub of this.publishers.values()) {
+          pub.blocked = false
+        }
+        break
+      }
     }
   }
 

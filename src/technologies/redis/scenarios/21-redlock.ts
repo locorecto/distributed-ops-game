@@ -87,7 +87,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 15, type: 'hot-key', target: 'redis-node-1', params: { reason: 'gc-pause', pauseMs: 150, lockTtlMs: 100 } },
+    { atTick: 15, type: 'race-condition', target: 'redis-node-1', params: { reason: 'gc-pause', pauseMs: 150, lockTtlMs: 100 } },
   ],
   victoryConditions: [
     {

@@ -69,7 +69,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'hot-key', target: 'redis-master', params: { reason: 'lua-blocking', scriptMs: 50 } },
+    { atTick: 5, type: 'slow-query', target: 'redis-master', params: { reason: 'lua-blocking', scriptMs: 50, latencyMs: 500 } },
   ],
   victoryConditions: [
     {

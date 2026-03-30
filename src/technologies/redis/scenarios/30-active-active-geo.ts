@@ -80,13 +80,13 @@ const scenario: RedisScenarioDefinition = {
   failureScript: [
     {
       atTick: 5,
-      type: 'network-partition',
+      type: 'replication-lag',
       target: 'redis-eu-west-master',
       params: { reason: 'inter-region-link-failure', durationTicks: 16, affectedKeys: 30000 },
     },
     {
       atTick: 21,
-      type: 'replication-conflict',
+      type: 'race-condition',
       target: 'redis-us-east-master',
       params: { reason: 'lww-overwrites-eu-writes', lostUpdates: 30000, lagMs: 12000 },
     },

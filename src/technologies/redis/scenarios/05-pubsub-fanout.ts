@@ -70,7 +70,7 @@ const scenario: RedisScenarioDefinition = {
   },
   failureScript: [
     { atTick: 20, type: 'node-down', target: 'redis-master', params: { reason: 'subscriber-restart' } },
-    { atTick: 40, type: 'memory-pressure', target: 'redis-master', params: {} },
+    { atTick: 40, type: 'eviction-storm', target: 'redis-master', params: {} },
   ],
   victoryConditions: [
     {

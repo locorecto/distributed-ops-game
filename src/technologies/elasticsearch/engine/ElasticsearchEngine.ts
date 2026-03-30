@@ -252,23 +252,107 @@ export class ElasticsearchEngine {
     this.splitBrainActive = false
   }
 
-  applyAction(_actionId: string): void {
-    this.activeFailures = []
-    for (const node of this.nodes.values()) {
-      node.isOnline = true
-      node.heapUsedPct = 0.4
-      node.diskUsedPct = 0.5
-      node.cpuPct = 0.2
-      node.jvmGcPressure = 0.1
-    }
-    for (const idx of this.indices.values()) {
-      idx.health = 'green'
-      idx.unassignedShards = 0
-      idx.queryLatencyMs = 5
-    }
-    for (const client of this.clients.values()) {
-      client.errorType = null
-      client.avgLatencyMs = 5
+  applyAction(actionId: string): void {
+    switch (actionId) {
+      case 'allocate-shards':
+      case 'reroute-shards': {
+        // Bring all offline nodes back online, recompute index health
+        for (const node of this.nodes.values()) {
+          if (!node.isOnline) {
+            node.isOnline = true
+            node.heapUsedPct = 0.3
+            node.cpuPct = 0.2
+            node.jvmGcPressure = 0.1
+          }
+        }
+        this._recomputeAllIndexHealth()
+        this.activeFailures = this.activeFailures.filter(
+          f => !f.startsWith('node-down') && !f.startsWith('unassigned-shards')
+        )
+        break
+      }
+      case 'add-node': {
+        // Recompute index health after the caller adds a node via addNode()
+        this._recomputeAllIndexHealth()
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('unassigned-shards'))
+        break
+      }
+      case 'increase-heap': {
+        // Clear circuit breaker if heap has come down
+        this._checkAndClearCircuitBreaker()
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('heap-pressure'))
+        break
+      }
+      case 'free-disk-space': {
+        for (const node of this.nodes.values()) {
+          if (node.config.roles.includes('data')) {
+            node.diskUsedPct = Math.min(node.diskUsedPct, 0.5)
+          }
+        }
+        this.diskIndexingBlocked = false
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('disk-watermark'))
+        // Restore indexing rates
+        this.indices.forEach(idx => {
+          if (idx.indexRate === 0) idx.indexRate = 100
+        })
+        break
+      }
+      case 'fix-mapping': {
+        // Clear mapping conflicts for all indices
+        this.mappingConflictIndices.clear()
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('mapping-conflict'))
+        this.clients.forEach(c => {
+          if (c.errorType === 'MapperParsingException') c.errorType = null
+        })
+        break
+      }
+      case 'rate-limit-queries': {
+        this.queryFloodActive = false
+        this.activeFailures = this.activeFailures.filter(f => f !== 'query-flood')
+        break
+      }
+      case 'rejoin-node': {
+        // Bring split-brain nodes back online
+        this.splitBrainActive = false
+        for (const node of this.nodes.values()) {
+          if (!node.isOnline) {
+            node.isOnline = true
+            node.heapUsedPct = 0.3
+            node.cpuPct = 0.2
+            node.jvmGcPressure = 0.1
+          }
+        }
+        electMaster(this.nodes)
+        this._recomputeAllIndexHealth()
+        this.activeFailures = this.activeFailures.filter(f => f !== 'split-brain')
+        break
+      }
+      default: {
+        // Fallback: full reset
+        this.activeFailures = []
+        for (const node of this.nodes.values()) {
+          node.isOnline = true
+          node.heapUsedPct = 0.4
+          node.diskUsedPct = 0.5
+          node.cpuPct = 0.2
+          node.jvmGcPressure = 0.1
+        }
+        for (const idx of this.indices.values()) {
+          idx.health = 'green'
+          idx.unassignedShards = 0
+          idx.queryLatencyMs = 5
+        }
+        for (const client of this.clients.values()) {
+          client.errorType = null
+          client.avgLatencyMs = 5
+        }
+        this.circuitBreakerTripped = false
+        this.diskIndexingBlocked = false
+        this.mappingConflictIndices.clear()
+        this.queryFloodActive = false
+        this.splitBrainActive = false
+        break
+      }
     }
   }
 

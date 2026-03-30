@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'hot-key', target: 'redis-master', params: { reason: 'watch-contention', abortRate: 0.4 } },
+    { atTick: 5, type: 'race-condition', target: 'redis-master', params: { reason: 'watch-contention', abortRate: 0.4 } },
   ],
   victoryConditions: [
     {

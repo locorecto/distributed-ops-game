@@ -94,17 +94,96 @@ export class FlinkEngine {
     this.injectedFailures.clear()
   }
 
-  applyAction(_actionId: string): void {
-    this.injectedFailures.clear()
-    for (const op of this.operators.values()) {
-      op.status = 'running'
-      op.backpressureRatio = 0
-      op.latencyMs = 10
-    }
-    for (const tm of this.taskManagers.values()) {
-      tm.isOnline = true
-      tm.heapUsedMb = tm.maxHeapMb * 0.4
-      tm.networkBuffersUsed = Math.floor(tm.networkBuffersTotal * 0.3)
+  applyAction(actionId: string): void {
+    switch (actionId) {
+      case 'scale-parallelism': {
+        // Fix backpressure by scaling — clear backpressure-spike injected failures
+        for (const key of [...this.injectedFailures.keys()]) {
+          if (key.startsWith('backpressure-spike:') || key.startsWith('slow-operator:')) {
+            this.injectedFailures.delete(key)
+          }
+        }
+        for (const op of this.operators.values()) {
+          if (op.status === 'backpressured') {
+            op.status = 'running'
+            op.backpressureRatio = 0
+          }
+        }
+        this.activeFailures = this.activeFailures.filter(
+          f => !f.startsWith('backpressure-spike:') && !f.startsWith('slow-operator:')
+        )
+        break
+      }
+      case 'enable-incremental-checkpoints': {
+        this.injectedFailures.set('__incremental__', { enabled: true })
+        this.activeFailures = this.activeFailures.filter(f => f !== 'checkpoint-failed')
+        break
+      }
+      case 'reduce-checkpoint-interval': {
+        if (this.scenario) {
+          this.scenario.initialTopology.checkpointIntervalMs = Math.max(
+            1000,
+            this.scenario.initialTopology.checkpointIntervalMs / 2,
+          )
+        }
+        break
+      }
+      case 'increase-heap': {
+        // Reset TM heap and clear OOM failure
+        for (const tm of this.taskManagers.values()) {
+          if (!tm.isOnline) {
+            tm.isOnline = true
+            tm.heapUsedMb = tm.maxHeapMb * 0.3
+          } else {
+            tm.heapUsedMb = tm.maxHeapMb * 0.3
+          }
+          tm.networkBuffersUsed = Math.floor(tm.networkBuffersTotal * 0.3)
+        }
+        for (const key of [...this.injectedFailures.keys()]) {
+          if (key.startsWith('state-backend-oom:')) this.injectedFailures.delete(key)
+        }
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('oom:') && !f.startsWith('state-backend-oom:'))
+        if (this.jobStatus === 'restarting' || this.jobStatus === 'failing') {
+          this._recoverJob()
+        }
+        break
+      }
+      case 'fix-watermark': {
+        // Clear watermark-stall from injectedFailures
+        for (const key of [...this.injectedFailures.keys()]) {
+          if (key.startsWith('watermark-stall:')) this.injectedFailures.delete(key)
+        }
+        // Advance watermarks back to current time
+        for (const op of this.operators.values()) {
+          if (op.config.type === 'source' && op.watermarkMs !== null) {
+            op.watermarkMs = Date.now()
+          }
+        }
+        this.activeFailures = this.activeFailures.filter(f => !f.startsWith('watermark-stall:'))
+        break
+      }
+      case 'reduce-state-ttl': {
+        // Add TTL hint to injected failures for state cleanup
+        for (const op of this.operators.values()) {
+          this.injectedFailures.set(`__ttl__:${op.config.id}`, { enabled: true })
+        }
+        break
+      }
+      default: {
+        // Fallback: full reset
+        this.injectedFailures.clear()
+        for (const op of this.operators.values()) {
+          op.status = 'running'
+          op.backpressureRatio = 0
+          op.latencyMs = 10
+        }
+        for (const tm of this.taskManagers.values()) {
+          tm.isOnline = true
+          tm.heapUsedMb = tm.maxHeapMb * 0.4
+          tm.networkBuffersUsed = Math.floor(tm.networkBuffersTotal * 0.3)
+        }
+        break
+      }
     }
   }
 

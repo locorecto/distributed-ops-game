@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 10, type: 'memory-pressure', target: 'redis-master', params: { ttlSeconds: 60 } },
+    { atTick: 10, type: 'ttl-expiry', target: 'redis-master', params: { ttlSeconds: 60 } },
   ],
   victoryConditions: [
     {

@@ -69,7 +69,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'hot-key', target: 'redis-master', params: { reason: 'notification-flood', eventsPerSec: 500000 } },
+    { atTick: 5, type: 'slow-query', target: 'redis-master', params: { reason: 'notification-flood', eventsPerSec: 500000, latencyMs: 5000 } },
   ],
   victoryConditions: [
     {

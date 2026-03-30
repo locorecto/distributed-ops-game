@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 20, type: 'memory-pressure', target: 'redis-master', params: { reason: 'mass-expiry' } },
+    { atTick: 20, type: 'eviction-storm', target: 'redis-master', params: { reason: 'mass-expiry' } },
     { atTick: 21, type: 'hot-key', target: 'redis-master', params: {} },
   ],
   victoryConditions: [

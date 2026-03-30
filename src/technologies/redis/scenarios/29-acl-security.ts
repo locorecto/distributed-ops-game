@@ -70,7 +70,7 @@ const scenario: RedisScenarioDefinition = {
   },
   failureScript: [
     { atTick: 5, type: 'node-down', target: 'redis-master', params: { reason: 'flushall-executed', keyCount: 0 } },
-    { atTick: 20, type: 'memory-pressure', target: 'redis-master', params: { reason: 'recovery-flood' } },
+    { atTick: 20, type: 'slow-query', target: 'redis-master', params: { reason: 'recovery-flood', latencyMs: 500 } },
   ],
   victoryConditions: [
     {

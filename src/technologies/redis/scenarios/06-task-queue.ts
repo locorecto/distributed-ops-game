@@ -70,7 +70,7 @@ const scenario: RedisScenarioDefinition = {
   },
   failureScript: [
     { atTick: 15, type: 'node-down', target: 'redis-master', params: { reason: 'worker-crash' } },
-    { atTick: 30, type: 'memory-pressure', target: 'redis-master', params: {} },
+    { atTick: 30, type: 'slow-query', target: 'redis-master', params: { latencyMs: 500 } },
   ],
   victoryConditions: [
     {

@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'memory-pressure', target: 'redis-master', params: { reason: 'single-command-rtt', rttMs: 1 } },
+    { atTick: 5, type: 'slow-query', target: 'redis-master', params: { reason: 'single-command-rtt', rttMs: 1, latencyMs: 100 } },
   ],
   victoryConditions: [
     {

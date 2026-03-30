@@ -61,7 +61,7 @@ const scenario: RedisScenarioDefinition = {
     ],
   },
   failureScript: [
-    { atTick: 5, type: 'memory-pressure', target: 'redis-search-master', params: { reason: 'unsortable-index-full-scan', documents: 10000000 } },
+    { atTick: 5, type: 'slow-query', target: 'redis-search-master', params: { reason: 'unsortable-index-full-scan', documents: 10000000, latencyMs: 3000 } },
   ],
   victoryConditions: [
     {
